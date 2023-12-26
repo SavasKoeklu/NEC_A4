@@ -34,8 +34,8 @@ class GeneticAlgorithm:
     def get_minimal_route(self):
         # create initial population
         initial_population =  self.create_initial_population()
-        selecte_one =  self.rank_selection(initial_population)
-        select_two = self.rank_selection(initial_population)
+        selecte_one =  (self.rank_selection(initial_population)).copy()
+        select_two = (self.rank_selection(initial_population)).copy()
 
 
         return select_two
@@ -74,8 +74,17 @@ class GeneticAlgorithm:
 
         return res[selected_one_index]
     
-    def one_point_crossover():
+    def one_point_crossover(first_chromosome, second_chromosome):
         #requirements
+            #Divide both chromosomes at a random position
+            #Swap the second half of the chromosomes
+        
+        position =  np.random.randint(low=1,high=len(first_chromosome.route))
+
+
+        
+        
+        
 
     
     
@@ -108,9 +117,19 @@ class Chromosome:
         
 
 
-problem = tsplib95.load('datasets/gr17.tsp.txt')
-Alg = GeneticAlgorithm(problem,2)
+#problem = tsplib95.load('datasets/gr17.tsp.txt')
+#Alg = GeneticAlgorithm(problem,2)
 
-print(Alg.get_minimal_route().get_as_tuple())
+#print(Alg.get_minimal_route().get_as_tuple())
+    
+a = [1,2,3,4]
+b = [5,6,7,8]
+position = np.random.randint(low=1,high=(len(a)))
+print(position)
+print(a[:position])
+print(a[position:])
+
+a[:position] = 0
+print(a)
 
 
