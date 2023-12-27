@@ -45,7 +45,9 @@ class GeneticAlgorithm:
             select_one =  self.rank_selection(initial_population)
             select_two = self.rank_selection(initial_population)
             new_chromosomes = self.one_point_crossover(select_one,select_two)
-            self.print_population([select_one,select_two])
+            self.print_population([select_one, select_two])
+            print("crossovered")
+            self.print_population(new_chromosomes)
             
         
 
@@ -95,12 +97,28 @@ class GeneticAlgorithm:
             #Swap the second half of the chromosomes
         
         # starts at one becuase to enforce at least that one element is crossed over
-        position =  np.random.randint(low=1,high=len(first_chromosome.route))
+        position =  np.random.randint(low=1,high=len(first_chromosome.route)-1)
         
-        # take first half of first_chromosome_route, so everything under position + append position and everything what is above from second Chromosome route
-        new_first_route = first_chromosome.route[:position] + second_chromosome.route[position:]
-        # in the order for the route for second chromosome
-        new_second_route = second_chromosome.route[:position] + first_chromosome.route[position:]
+        new_first_route = first_chromosome.route.copy()
+        new_second_route = second_chromosome.route.copy()
+
+        for i in range(position):
+    
+            # if element is not already at the same place
+            if new_first_route[i] != second_chromosome.route[i]:
+                firstroute_index_for_current_element = new_first_route.index(second_chromosome.route[i])
+                # put element to replace on the index where element which replaces is
+                new_first_route[firstroute_index_for_current_element] = new_first_route[i]
+                # replace 
+                new_first_route[i] = second_chromosome.route[i]
+
+            # same for b
+            secondroute_index_for_current_element = new_second_route.index(first_chromosome.route[i])
+            if i != secondroute_index_for_current_element:
+                new_second_route[secondroute_index_for_current_element] = new_second_route[i]
+                new_second_route[i] = first_chromosome.route[i]
+
+
 
         # create two new chromosomes with route
         first = Chromosome(new_first_route,self.problem)
@@ -151,22 +169,37 @@ Alg = GeneticAlgorithm(problem,2)
 
 Alg.get_minimal_route().get_as_tuple()
     
-# a = [0,1,2,3]
-# b = [4,5,6,7]
-# position = np.random.randint(low=1,high=(len(a)))
+# a = [5,7,1,3,6,4,2]
+# b = [4,6,2,7,3,1,5]
+# position = np.random.randint(low=1,high=(len(a)-1))
+# # switch the first half
+# new_a = a.copy()
+# new_b = b.copy()
+# print(f"position: {position}")
 
-# print(position)
-# print(a[position:])
-# print(a[:position])
 
-# # take first half of a, so everything under position + append position and everything what is above from b
-# new_a = a[:position] + b[position:]
+# for i in range(position):
+#     a_index_for_current_element = new_a.index(b[i])
+#     # if element is not already at the same place
+#     if new_a[i] != b[i]:
+#         # put element to replace on the index where element which replaces is
+#         new_a[a_index_for_current_element] = new_a[i]
+#         # replace 
+#         new_a[i] = b[i]
 
-# new_b = b[:position] + a[position:]
+#     # same for b
+#     b_index_for_current_element = new_b.index(a[i])
+#     if i != b_index_for_current_element:
+#         new_b[b_index_for_current_element] = new_b[i]
+#         new_b[i] = a[i]
 
 
 # print(new_a)
-# print(f"b : {new_b}")
+# print(new_b)
+    
+
+    
+
 
 
 
