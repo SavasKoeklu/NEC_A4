@@ -11,6 +11,9 @@ class GeneticAlgorithm:
         self.initial_population_size = initial_population_size
         self.problem = problem
 
+        # create array where all populations are stored
+        self.all_populations = []
+
     def create_initial_population(self):
         # requirement:
             # Todo: I think we not have to consider asymetric graphs, for example where there is no route between cities or there different distances for (c1,c2), (c2,c1)
@@ -33,9 +36,21 @@ class GeneticAlgorithm:
     
     def get_minimal_route(self):
         # create initial population
+        
         initial_population =  self.create_initial_population()
-        selecte_one =  (self.rank_selection(initial_population)).copy()
-        select_two = (self.rank_selection(initial_population)).copy()
+        self.all_populations.append(initial_population)
+
+        # TODO: find stationary state, so how much generations?
+        for generation in range(1):
+            select_one =  self.rank_selection(initial_population)
+            select_two = self.rank_selection(initial_population)
+            new_chromosomes = self.one_point_crossover(select_one,select_two)
+            self.print_population([select_one,select_two])
+            
+        
+
+        
+        
 
 
         return select_two
@@ -74,12 +89,26 @@ class GeneticAlgorithm:
 
         return res[selected_one_index]
     
-    def one_point_crossover(first_chromosome, second_chromosome):
+    def one_point_crossover(self, first_chromosome, second_chromosome):
         #requirements
             #Divide both chromosomes at a random position
             #Swap the second half of the chromosomes
         
+        # starts at one becuase to enforce at least that one element is crossed over
         position =  np.random.randint(low=1,high=len(first_chromosome.route))
+        
+        # take first half of first_chromosome_route, so everything under position + append position and everything what is above from second Chromosome route
+        new_first_route = first_chromosome.route[:position] + second_chromosome.route[position:]
+        # in the order for the route for second chromosome
+        new_second_route = second_chromosome.route[:position] + first_chromosome.route[position:]
+
+        # create two new chromosomes with route
+        first = Chromosome(new_first_route,self.problem)
+        second = Chromosome(new_second_route, self.problem)
+
+        print(f"position for crossover:{position}")
+
+        return [first,second]
 
 
         
@@ -117,19 +146,28 @@ class Chromosome:
         
 
 
-#problem = tsplib95.load('datasets/gr17.tsp.txt')
-#Alg = GeneticAlgorithm(problem,2)
+problem = tsplib95.load('datasets/gr17.tsp.txt')
+Alg = GeneticAlgorithm(problem,2)
 
-#print(Alg.get_minimal_route().get_as_tuple())
+Alg.get_minimal_route().get_as_tuple()
     
-a = [1,2,3,4]
-b = [5,6,7,8]
-position = np.random.randint(low=1,high=(len(a)))
-print(position)
-print(a[:position])
-print(a[position:])
+# a = [0,1,2,3]
+# b = [4,5,6,7]
+# position = np.random.randint(low=1,high=(len(a)))
 
-a[:position] = 0
-print(a)
+# print(position)
+# print(a[position:])
+# print(a[:position])
+
+# # take first half of a, so everything under position + append position and everything what is above from b
+# new_a = a[:position] + b[position:]
+
+# new_b = b[:position] + a[position:]
+
+
+# print(new_a)
+# print(f"b : {new_b}")
+
+
 
 
