@@ -34,33 +34,33 @@ class GeneticAlgorithm:
             population.append(Chromosome(new_list,self.problem))
         return population
     
-    def get_minimal_route(self):
+    def use_genetic_algorithm(self):
         # create initial population
         
         initial_population =  self.create_initial_population()
         self.all_populations.append(initial_population)
 
         # TODO: find stationary state, so how much generations? Maybe when the average fitness value get's worse?
-        for generation in range(1):
-            #TODO: implement that not the same route is choosen
-            select_one =  self.rank_selection(initial_population)
-            select_two = self.rank_selection(initial_population)
-            new_chromosomes = self.one_point_partially_mapped_crossover(select_one,select_two)
-            self.tower_mutation(new_chromosomes)
-
-            
-        
-
-        
-        
-
-
-        return select_two
-        # evaluate fitness function#
+        for generation in range(200):
+            new_population = []
+            for pair in range(int(self.initial_population_size/2)):
+                #TODO: implement that not the same route is choosen
+                select_one =  self.rank_selection(initial_population)
+                select_two = self.rank_selection(initial_population)
+                new_chromosomes = self.one_point_partially_mapped_crossover(select_one,select_two)
+                self.tower_mutation(new_chromosomes)
+                new_population = new_population + new_chromosomes
+             
+            self.all_populations.append(new_population.copy())
     
     def print_population(self,population):
         for c in population:
             print(c.get_as_tuple())
+    
+    def evolution_of_minimum(self):
+        distances =  [[c.get_distance() for c in pop ] for pop in self.all_populations]
+        min_distances = [ min(distance_of_one_population) for distance_of_one_population in distances]
+        return min_distances
 
     #requirements for selection:
             #large fitness large probablity to get selected
@@ -131,21 +131,9 @@ class GeneticAlgorithm:
         for chrom in chromosome_list:
             positions = random.sample(range(len(chrom.route)),2)
             chrom.route_swap_positions(positions[0],positions[1])
-        
-        
 
 
 
-
-
-        
-
-
-        
-        
-        
-
-    
     
 
 class Chromosome:
@@ -159,6 +147,10 @@ class Chromosome:
     # requirements fitness function to maximize when the distance of the route minimizes
         fitness = 1/float(self.problem.trace_tours([route])[0])
         return fitness
+    
+    def get_distance(self):
+        return self.problem.trace_tours([self.route])[0]
+        
     
     def set_route(self,route):
         self.route = route
@@ -175,19 +167,19 @@ class Chromosome:
         self.fitness = self.fitness_for_route(self.route)
         
     
-    
 
-    
-
-    
-
-        
 
 
 problem = tsplib95.load('datasets/gr17.tsp.txt')
-Alg = GeneticAlgorithm(problem,2)
+Alg = GeneticAlgorithm(problem,1000)
 
-Alg.get_minimal_route().get_as_tuple()
+Alg.use_genetic_algorithm()
+# for pop in Alg.all_populations:
+#     print("new population")
+#     Alg.print_population(pop)
+
+print(Alg.evolution_of_minimum())
+
     
 # a = [5,7,1,3,6,4,2]
 # b = [4,6,2,7,3,1,5]
