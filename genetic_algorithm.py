@@ -40,14 +40,14 @@ class GeneticAlgorithm:
         initial_population =  self.create_initial_population()
         self.all_populations.append(initial_population)
 
-        # TODO: find stationary state, so how much generations?
+        # TODO: find stationary state, so how much generations? Maybe when the average fitness value get's worse?
         for generation in range(1):
+            #TODO: implement that not the same route is choosen
             select_one =  self.rank_selection(initial_population)
             select_two = self.rank_selection(initial_population)
-            new_chromosomes = self.one_point_crossover(select_one,select_two)
-            self.print_population([select_one, select_two])
-            print("crossovered")
-            self.print_population(new_chromosomes)
+            new_chromosomes = self.one_point_partially_mapped_crossover(select_one,select_two)
+            self.tower_mutation(new_chromosomes)
+
             
         
 
@@ -91,17 +91,17 @@ class GeneticAlgorithm:
 
         return res[selected_one_index]
     
-    def one_point_crossover(self, first_chromosome, second_chromosome):
+    def one_point_partially_mapped_crossover(self, first_chromosome, second_chromosome):
         #requirements
             #Divide both chromosomes at a random position
             #Swap the second half of the chromosomes
         
-        # starts at one becuase to enforce at least that one element is crossed over
+        # we want to enforce that two new chromosomes are generated and not that the old ones are coppied
         position =  np.random.randint(low=1,high=len(first_chromosome.route)-1)
         
         new_first_route = first_chromosome.route.copy()
         new_second_route = second_chromosome.route.copy()
-
+        # switch cities in poisition i for new routes from parent routes
         for i in range(position):
     
             # if element is not already at the same place
@@ -118,15 +118,27 @@ class GeneticAlgorithm:
                 new_second_route[secondroute_index_for_current_element] = new_second_route[i]
                 new_second_route[i] = first_chromosome.route[i]
 
-
-
         # create two new chromosomes with route
         first = Chromosome(new_first_route,self.problem)
         second = Chromosome(new_second_route, self.problem)
 
-        print(f"position for crossover:{position}")
-
         return [first,second]
+    
+    def tower_mutation(self,chromosome_list):
+        # change two genes randomly
+
+        # choose two different elements from the route
+        for chrom in chromosome_list:
+            positions = random.sample(range(len(chrom.route)),2)
+            chrom.route_swap_positions(positions[0],positions[1])
+        
+        
+
+
+
+
+
+        
 
 
         
@@ -154,6 +166,14 @@ class Chromosome:
     
     def get_as_tuple(self):
         return (self.route, self.fitness)
+    
+    def route_swap_positions(self,poisition1,position2):
+        poisition1_value = self.route[poisition1]
+        position2_value = self.route[position2]
+        self.route[poisition1] = position2_value
+        self.route[position2] = poisition1_value
+        self.fitness = self.fitness_for_route(self.route)
+        
     
     
 
