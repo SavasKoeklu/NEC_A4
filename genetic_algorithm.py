@@ -6,11 +6,12 @@ import numpy as np
 class GeneticAlgorithm:
 
      # Todo: chnage name of activation function to "fact"
-    def __init__(self, problem, initial_population_size=100):
+    def __init__(self, problem, initial_population_size=100, mutation_rate=0.5, crossover_rate = 0.5 ):
         # the size of the initial population
         self.initial_population_size = initial_population_size
         self.problem = problem
-
+        self.mutation_rate = mutation_rate
+        self.crossover_rate = crossover_rate
         # create array where all populations are stored
         self.all_populations = []
 
@@ -41,7 +42,7 @@ class GeneticAlgorithm:
         self.all_populations.append(initial_population)
 
         # TODO: find stationary state, so how much generations? Maybe when the average fitness value get's worse?
-        for generation in range(200):
+        for generation in range(300):
             new_population = []
             for pair in range(int(self.initial_population_size/2)):
                 #TODO: implement that not the same route is choosen
@@ -171,7 +172,7 @@ class Chromosome:
 
 
 problem = tsplib95.load('datasets/gr17.tsp.txt')
-Alg = GeneticAlgorithm(problem,1000)
+Alg = GeneticAlgorithm(problem,200)
 
 Alg.use_genetic_algorithm()
 # for pop in Alg.all_populations:
