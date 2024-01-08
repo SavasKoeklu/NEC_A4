@@ -10,6 +10,9 @@ class Chromosome:
         fitness = 1 / float(self.problem.trace_tours([route])[0])
         return fitness
 
+    def update_fitness(self):
+        self.fitness = self.fitness_for_route(self.route)
+
     def get_distance(self):
         return self.problem.trace_tours([self.route])[0]
 

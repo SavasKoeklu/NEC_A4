@@ -61,7 +61,7 @@ class GeneticAlgorithm:
         # create initial population
 
         self.current_population = self.create_initial_population()
-        self.current_population = sorted(self.current_population, key=lambda chrom: chrom.fitness)
+        self.current_population = sorted(self.current_population, key=lambda chrom: -chrom.fitness)
         self.recalculate_fitness_probabilities()
         self.all_populations.append(self.current_population)
 
@@ -70,11 +70,12 @@ class GeneticAlgorithm:
             # Select proper selection methods based on hyperparameters
             selection_method = self.rank_selection if random.random() < P_RANK_SELECTION else self.roulette_selection
             # The number of best parents automatically go to the next population
-            new_population = selection_method(self.surviving)
+            new_population = self.current_population[:self.surviving]
             new_population += self.perform_crossover()
             self.perform_mutations(new_population)
             self.all_populations.append(new_population.copy())
             self.current_population = new_population
+            self.current_population.sort(key=lambda chrom: -chrom.fitness)
             self.recalculate_fitness_probabilities()
 
     def perform_crossover(self) -> List[Chromosome]:
@@ -105,6 +106,7 @@ class GeneticAlgorithm:
                 self.inversion_mutation(population[i])
             elif mutation_p < P_TOWER_MUTATION + P_INVERSE_MUTATION + P_ROTATION_TO_THE_RIGHT_MUTATION:
                 self.rotation_to_the_right_mutation(population[i])
+            population[i].update_fitness()
 
     def recalculate_fitness_probabilities(self) -> None:
         """
