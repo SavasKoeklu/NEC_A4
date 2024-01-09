@@ -1,7 +1,7 @@
 import random
 import tsplib95
-import pandas as pd
 from typing import List
+from numpy.random import default_rng
 
 from Chromosome import Chromosome
 import numpy as np
@@ -11,7 +11,11 @@ P_TOWER_MUTATION = 0.3
 P_INVERSE_MUTATION = 0.3
 P_ROTATION_TO_THE_RIGHT_MUTATION = 0.4
 
-P_RANK_SELECTION = 0.01
+P_RANK_SELECTION = 0.2
+P_ROULETTE_SELECTION = 0.8
+
+P_ORDER_CROSSOVER = 0.5
+P_PARTIALLY_MAPPED_CROSSOVER = 0.5
 
 
 class GeneticAlgorithm:
@@ -23,6 +27,7 @@ class GeneticAlgorithm:
         :param mutation_rate: how many new children will come from mutation
         :param elitism: ratio of individuals surviving after each generation
         """
+        self.rng = default_rng()
         self.population_size = population_size
         self.problem = problem
         self.mutation_rate = mutation_rate
@@ -67,8 +72,6 @@ class GeneticAlgorithm:
 
         # TODO: find stationary state, so how much generations? Maybe when the average fitness value get's worse?
         for generation in range(30):
-            # Select proper selection methods based on hyperparameters
-            selection_method = self.rank_selection if random.random() < P_RANK_SELECTION else self.roulette_selection
             # The number of best parents automatically go to the next population
             new_population = self.current_population[:self.surviving]
             new_population += self.perform_crossover()
@@ -78,6 +81,16 @@ class GeneticAlgorithm:
             self.current_population.sort(key=lambda chrom: -chrom.fitness)
             self.recalculate_fitness_probabilities()
 
+    def get_selection_function(self):
+        p = random.random()
+        if p < P_RANK_SELECTION:
+            return self.rank_selection
+        elif p < P_RANK_SELECTION + P_ROULETTE_SELECTION:
+            return self.roulette_selection
+
+        # Should never come here
+        assert "Probabilities do not add up to 1"
+
     def perform_crossover(self) -> List[Chromosome]:
         """
         Perform the crossover process by using different crossover techniques
@@ -85,8 +98,12 @@ class GeneticAlgorithm:
         """
         children = []
         for i in range((self.population_size - self.surviving) // 2):
-            ind_1, ind_2 = self.rank_selection(2)
-            children += self.one_point_partially_mapped_crossover(ind_1, ind_2)
+            chr1, chr2 = (self.get_selection_function())(2)
+            p = random.random()
+            if p < P_PARTIALLY_MAPPED_CROSSOVER:
+                children += self.one_point_partially_mapped_crossover(chr1, chr2)
+            elif p < P_PARTIALLY_MAPPED_CROSSOVER + P_ORDER_CROSSOVER:
+                children += self.order_crossover(chr1, chr2)
         return children
 
     def perform_mutations(self, population) -> None:
@@ -180,6 +197,33 @@ class GeneticAlgorithm:
         second = Chromosome(new_second_route, self.problem)
 
         return [first, second]
+
+    def order_crossover(self, first_chromosome: Chromosome, second_chromosome: Chromosome):
+        def order_chromosome_create_child(parent_main: Chromosome, parent_secondary: Chromosome, pos1,
+                                          pos2) -> Chromosome:
+            # Create a child chromosome with the same route as the main parent
+            child = Chromosome(parent_main.route.copy(), parent_main.problem)
+
+            # We keep the part of the chromosome between the two selected positions,
+            # but nodes on all the replace_indices will be reordered
+            replace_indices = list(range(pos1, pos2)) if pos2 > pos1 else list(range(0, pos2)) + list(
+                range(pos1, len(parent_main.route)))
+
+            # Select specific nodes that will be reordered into a set
+            nodes_to_reorder = {parent_main.route[i] for i in replace_indices}
+
+            # Reorder the nodes_to_reorder into the same order as in the secondary chromosome
+            nodes_ordered = [parent_secondary.route[i] for i in range(len(parent_main.route)) if
+                             parent_secondary.route[i] in nodes_to_reorder]
+
+            for i in range(len(replace_indices)):
+                child.route[replace_indices[i]] = nodes_ordered[i]
+            child.update_fitness()
+            return child
+
+        p1, p2 = self.rng.choice(len(first_chromosome.route), size=2, replace=False)
+        return order_chromosome_create_child(first_chromosome, second_chromosome, p1, p2), \
+            order_chromosome_create_child(second_chromosome, first_chromosome, p1, p2),
 
     @staticmethod
     def tower_mutation(chrom):
