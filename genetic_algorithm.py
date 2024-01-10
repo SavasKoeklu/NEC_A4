@@ -39,7 +39,7 @@ class GeneticAlgorithm:
         self.all_populations = []
         self.current_population = None
         self.ranked_probabilities = [x / ((1 + population_size) / 2 * population_size) for x in
-                                     range(1, population_size + 1)]
+                                     reversed(range(1, population_size + 1))]
         self.fitness_probabilities = None
 
     def create_initial_population(self):
