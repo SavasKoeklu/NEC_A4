@@ -17,9 +17,11 @@ P_ROULETTE_SELECTION = 0.8
 P_ORDER_CROSSOVER = 0.5
 P_PARTIALLY_MAPPED_CROSSOVER = 0.5
 
+NON_IMPROVING_GENERATIONS_BEFORE_STOP = 20
+
 
 class GeneticAlgorithm:
-    def __init__(self, problem, population_size=200, mutation_rate=0.9, elitism=0.2):
+    def __init__(self, problem, population_size=200, mutation_rate=0.3, elitism=0.2):
         """
         Initialize the algorithm.
         :param problem: TSP problem to be solved
@@ -41,6 +43,7 @@ class GeneticAlgorithm:
         self.ranked_probabilities = [x / ((1 + population_size) / 2 * population_size) for x in
                                      reversed(range(1, population_size + 1))]
         self.fitness_probabilities = None
+        self.min_distances = []
 
     def create_initial_population(self):
         # requirement:
@@ -62,16 +65,17 @@ class GeneticAlgorithm:
             population.append(Chromosome(new_list, self.problem))
         return population
 
-    def use_genetic_algorithm(self):
+    def use_genetic_algorithm(self, max_generations=1000):
         # create initial population
-
         self.current_population = self.create_initial_population()
         self.current_population = sorted(self.current_population, key=lambda chrom: -chrom.fitness)
         self.recalculate_fitness_probabilities()
         self.all_populations.append(self.current_population)
 
-        # TODO: find stationary state, so how much generations? Maybe when the average fitness value get's worse?
-        for generation in range(30):
+        best_distance = float("inf")
+        non_improving_generations = 0
+
+        for generation in range(max_generations):
             # The number of best parents automatically go to the next population
             new_population = self.current_population[:self.surviving]
             new_population += self.perform_crossover()
@@ -80,6 +84,21 @@ class GeneticAlgorithm:
             self.current_population = new_population
             self.current_population.sort(key=lambda chrom: -chrom.fitness)
             self.recalculate_fitness_probabilities()
+
+            # best_generation_distance = min(c.get_distance() for c in self.current_population)
+            best_generation_distance = self.current_population[0].get_distance()
+            self.min_distances.append(best_generation_distance)
+            if best_generation_distance < best_distance:
+                best_distance = best_generation_distance
+                non_improving_generations = 0
+                print(f"Generation {generation}. New best distance: {best_distance}")
+            else:
+                non_improving_generations += 1
+
+            if non_improving_generations > NON_IMPROVING_GENERATIONS_BEFORE_STOP:
+                print(f"Stopping on generation {generation} because of no improvement")
+                return
+        print("Reached max number of generations")
 
     def get_selection_function(self):
         p = random.random()
@@ -115,7 +134,6 @@ class GeneticAlgorithm:
             # Mutate an individual with the certain probability
             if random.random() > self.mutation_rate:
                 continue
-            # TODO: make more mutations here and a probabilistic decision on which one to use
             mutation_p = random.random()
             if mutation_p < P_TOWER_MUTATION:
                 self.tower_mutation(population[i])
@@ -143,9 +161,7 @@ class GeneticAlgorithm:
             print(c.get_as_tuple())
 
     def evolution_of_minimum(self):
-        distances = [[c.get_distance() for c in pop] for pop in self.all_populations]
-        min_distances = [min(distance_of_one_population) for distance_of_one_population in distances]
-        return min_distances
+        return self.min_distances
 
     # requirements for selection:
     # large fitness large probablity to get selected
@@ -270,7 +286,7 @@ if __name__ == '__main__':
     problem = tsplib95.load('datasets/gr17.tsp.txt')
     Alg = GeneticAlgorithm(problem, 200)
 
-    Alg.use_genetic_algorithm()
+    Alg.use_genetic_algorithm(1000)
     # for pop in Alg.all_populations:
     #     print("new population")
     #     Alg.print_population(pop)
