@@ -3,6 +3,7 @@ import tsplib95
 from typing import List
 from numpy.random import default_rng
 from itertools import chain
+import math
 
 from Chromosome import Chromosome
 import numpy as np
@@ -74,7 +75,8 @@ class GeneticAlgorithm:
         self.mutation_function = {
             0: self.tower_mutation,
             1: self.inversion_mutation,
-            2: self.rotation_to_the_right_mutation
+            2: self.rotation_to_the_right_mutation,
+            3: self.thrors_mutation
         }
         return self.mutation_function[index_for_mutation]
 
@@ -85,8 +87,6 @@ class GeneticAlgorithm:
         # i think it makes sense that each individual has to be only once in their, therefore when we have a population of 100, with 100 differenct chromosomes
         # the start and the ende node has to be the origin city for each chromosome
         nodes = list(self.problem.get_nodes())
-        firstelement = nodes[0]
-        nodes.remove(nodes[0])
         population = []
         for i in range(self.population_size):
             while True:
@@ -94,7 +94,6 @@ class GeneticAlgorithm:
                 random.shuffle(new_list)
                 if new_list not in population:
                     break
-            new_list.insert(0, firstelement)
 
             population.append(Chromosome(new_list, self.problem))
         return population
@@ -300,8 +299,6 @@ class GeneticAlgorithm:
                     position = route_main.index(route_second[position])
                 else:
                     break
-            print("cycle:")
-            print(cycle)
             #take only the elments at the exact same position of secondary_route, which are not in the cycle
             for i in range(len(route_second)):
                 if route_second[i] not in cycle:
@@ -353,34 +350,37 @@ class GeneticAlgorithm:
             chrom.route[0:shift_chunk_size] = shift_right(chrom.route[0:shift_chunk_size], k)
             # Perform the shift back to the left to keep the not altered part on the same place
             chrom.route = chrom.route[len(chrom.route) - p2:] + chrom.route[:len(chrom.route) - p2]
+        
+    def thrors_mutation(self,chrom):
+        # take randomly three position i >j>l, has not to be successive elements
+        # change j with i, l with  j, and i with l
+        new_route = chrom.route.copy()
+        positions = random.sample(chrom.route, 3)
+        positions.sort()
 
-
+        for i in range(len(positions)):
+            place_from = (i + len(positions) - 1) % len(positions)
+            new_route[positions[i]] = chrom.route[positions[place_from]]
+    
+        chrom.set_route(new_route)
+        
+        
 
 if __name__ == '__main__':
     problem = tsplib95.load('datasets/gr17.tsp.txt')
-    Alg = GeneticAlgorithm(problem, 200,0.3,0.2,0,3,0)
+    Alg = GeneticAlgorithm(problem, 200,0.3,0.2,1,3,3)
+
+    # test_cyclic_crossover = Alg.create_initial_population()
+    # Alg.print_population([test_cyclic_crossover[0]])
+    # Alg.print_population(Alg.cyclic_crossover(test_cyclic_crossover[0],test_cyclic_crossover[1]))
+    
 
     print(Alg.use_genetic_algorithm(1000))
-    # for pop in Alg.all_populations:
-    #     print("new population")
-    #     Alg.print_population(pop)
+    for pop in Alg.all_populations:
+        print("new population")
+        Alg.print_population(pop)
 
     #a = [5,7,1,3,6,4,2]
     #b = [4,6,2,7,3,1,5]
     
-
-    
-
-    
-
-
-
-   # print(Alg.evolution_of_minimum())
-
-
-
-
-
-
-# print(new_a)
-# print(new_b)
+    print(Alg.evolution_of_minimum())
