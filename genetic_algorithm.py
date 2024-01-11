@@ -2,6 +2,7 @@ import random
 import tsplib95
 from typing import List
 from numpy.random import default_rng
+from itertools import chain
 
 from Chromosome import Chromosome
 import numpy as np
@@ -228,8 +229,11 @@ class GeneticAlgorithm:
             # Select specific nodes that will be reordered into a set
             nodes_to_reorder = {parent_main.route[i] for i in replace_indices}
 
+            # Nodes in the child chromosome are ordered with respect to their order in the secondary parent chromosome
+            # but starting from the end of the selected chunk
             # Reorder the nodes_to_reorder into the same order as in the secondary chromosome
-            nodes_ordered = [parent_secondary.route[i] for i in range(len(parent_main.route)) if
+            nodes_ordered = [parent_secondary.route[i] for i in
+                             chain(range(pos1, len(parent_main.route)), range(0, pos1)) if
                              parent_secondary.route[i] in nodes_to_reorder]
 
             for i in range(len(replace_indices)):
