@@ -15,8 +15,9 @@ P_ROTATION_TO_THE_RIGHT_MUTATION = 0.4
 P_RANK_SELECTION = 0.2
 P_ROULETTE_SELECTION = 0.8
 
-P_ORDER_CROSSOVER = 0.5
-P_PARTIALLY_MAPPED_CROSSOVER = 0.5
+P_ORDER_CROSSOVER = 0.4
+P_PARTIALLY_MAPPED_CROSSOVER = 0.3
+P_TWO_POINT_PARTIALLY_MAPPED_CROSSOVER = 0.3
 
 NON_IMPROVING_GENERATIONS_BEFORE_STOP = 20
 
@@ -101,16 +102,6 @@ class GeneticAlgorithm:
                 return
         print("Reached max number of generations")
 
-    def get_selection_function(self):
-        p = random.random()
-        if p < P_RANK_SELECTION:
-            return self.rank_selection
-        elif p < P_RANK_SELECTION + P_ROULETTE_SELECTION:
-            return self.roulette_selection
-
-        # Should never come here
-        assert "Probabilities do not add up to 1"
-
     def perform_crossover(self) -> List[Chromosome]:
         """
         Perform the crossover process by using different crossover techniques
@@ -118,12 +109,16 @@ class GeneticAlgorithm:
         """
         children = []
         for i in range((self.population_size - self.surviving) // 2):
-            chr1, chr2 = (self.get_selection_function())(2)
+            selection = np.random.choice([self.rank_selection, self.roulette_selection],
+                                         p=(P_RANK_SELECTION, P_ROULETTE_SELECTION))
+            chr1, chr2 = selection(2)
             p = random.random()
-            if p < P_PARTIALLY_MAPPED_CROSSOVER:
-                children += self.one_point_partially_mapped_crossover(chr1, chr2)
-            elif p < P_PARTIALLY_MAPPED_CROSSOVER + P_ORDER_CROSSOVER:
-                children += self.order_crossover(chr1, chr2)
+            crossover = np.random.choice(
+                [self.one_point_partially_mapped_crossover, self.two_point_partially_mapped_crossover,
+                 self.order_crossover],
+                p=(P_PARTIALLY_MAPPED_CROSSOVER, P_TWO_POINT_PARTIALLY_MAPPED_CROSSOVER, P_ORDER_CROSSOVER))
+
+            children += crossover(chr1, chr2)
         return children
 
     def perform_mutations(self, population) -> None:
@@ -135,13 +130,10 @@ class GeneticAlgorithm:
             # Mutate an individual with the certain probability
             if random.random() > self.mutation_rate:
                 continue
-            mutation_p = random.random()
-            if mutation_p < P_TOWER_MUTATION:
-                self.tower_mutation(population[i])
-            elif mutation_p < P_TOWER_MUTATION + P_INVERSE_MUTATION:
-                self.inversion_mutation(population[i])
-            elif mutation_p < P_TOWER_MUTATION + P_INVERSE_MUTATION + P_ROTATION_TO_THE_RIGHT_MUTATION:
-                self.rotation_to_the_right_mutation(population[i])
+            mutation = np.random.choice(
+                [self.tower_mutation, self.inversion_mutation, self.rotation_to_the_right_mutation],
+                p=(P_TOWER_MUTATION, P_INVERSE_MUTATION, P_ROTATION_TO_THE_RIGHT_MUTATION))
+            mutation(population[i])
             population[i].update_fitness()
 
     def recalculate_fitness_probabilities(self) -> None:
@@ -214,6 +206,25 @@ class GeneticAlgorithm:
         second = Chromosome(new_second_route, self.problem)
 
         return [first, second]
+
+    def two_point_partially_mapped_crossover(self, first_chromosome: Chromosome, second_chromosome: Chromosome):
+        def generate_offspring(parent_main: Chromosome, parent_secondary: Chromosome, pos1, pos2):
+            offspring = Chromosome(parent_main.route.copy(), self.problem)
+
+            for i in chain(range(0, pos1), range(pos2, len(parent_main.route))):
+                candidate = parent_secondary.route[i]
+                # Search for the replacement while the candidate is in the cut chunk
+                while candidate in parent_main.route[p1:p2]:
+                    candidate = parent_secondary.route[parent_main.route.index(candidate)]
+                offspring.route[i] = candidate
+            offspring.update_fitness()
+            return offspring
+
+        p1, p2 = np.sort(self.rng.choice(len(first_chromosome.route), size=2, replace=False))
+
+        return generate_offspring(first_chromosome, second_chromosome, p1, p2), generate_offspring(second_chromosome,
+                                                                                                   first_chromosome, p1,
+                                                                                                   p2)
 
     def order_crossover(self, first_chromosome: Chromosome, second_chromosome: Chromosome):
         def order_chromosome_create_child(parent_main: Chromosome, parent_secondary: Chromosome, pos1,
