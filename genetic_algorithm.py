@@ -174,13 +174,23 @@ class GeneticAlgorithm:
         # to ensure all fitnesses are up todate
         for c in self.current_population:
             c.update_fitness()
-
+        
         fitnesses = [c.fitness for c in self.current_population]
+        print("fitness")
+        print(fitnesses)
+        print(f"len fitness: {len(fitnesses)}")
         # Very often the fitness here are very low as path lengths are far from zero
         # (e.g. path lengths of 3100 and 3000) would lead to almost the same probabilities for these individuals
         # To avoid this, we rescale the fitness by subtracting the minimum one form each
+
+        # TODO: Dennis check if this is right,
+        # I modified it so that it has to be checked if all results are all the same, because when this happens than ----> error
+
         s = sum(fitnesses) - min(fitnesses) * len(fitnesses)
-        self.fitness_probabilities = [(fitness - min(fitnesses)) / s for fitness in fitnesses]
+        if s > 0:
+            self.fitness_probabilities = [(fitness - min(fitnesses)) / s for fitness in fitnesses]
+        else:
+            self.fitness_probabilities = [ f/sum(fitnesses) for f in fitnesses]
 
     def print_population(self, population):
         for c in population:
@@ -197,8 +207,8 @@ class GeneticAlgorithm:
         # select probabilites after fitness of chromosome
         # non negative fitness
 
-        # choose one regarding probabilities
-        return list(np.random.choice(self.current_population, count, p=self.fitness_probabilities))
+        # choose regarding probabilities
+        return list(np.random.choice(self.current_population, size=count, p=self.fitness_probabilities))
 
     def rank_selection(self, count=1):
         # requirements
@@ -374,17 +384,18 @@ class GeneticAlgorithm:
 
 if __name__ == '__main__':
     problem = tsplib95.load('datasets/gr17.tsp.txt')
-    Alg = GeneticAlgorithm(problem, 200,0.3,0.2,1,1,3,3)
+    problem = tsplib95.load('datasets/five.tsp')
+    Alg = GeneticAlgorithm(problem, 30,0,0.2,0.15,0,0,1)
 
     # test_cyclic_crossover = Alg.create_initial_population()
     # Alg.print_population([test_cyclic_crossover[0]])
     # Alg.print_population(Alg.cyclic_crossover(test_cyclic_crossover[0],test_cyclic_crossover[1]))
     
 
-    print(Alg.use_genetic_algorithm(1000))
-    for pop in Alg.all_populations:
-        print("new population")
-        Alg.print_population(pop)
+    Alg.use_genetic_algorithm(1000)
+    #for pop in Alg.all_populations:
+     #   print("new population")
+      #  Alg.print_population(pop)
 
     #a = [5,7,1,3,6,4,2]
     #b = [4,6,2,7,3,1,5]
