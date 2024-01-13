@@ -27,7 +27,7 @@ TOURNAMENT_SELECTION_K = 10
 
 class GeneticAlgorithm:
 
-    def __init__(self, problem, population_size=200, mutation_rate=0.3, elitism=0.2, crossover_rate=1,
+    def __init__(self, problem, population_size=200, mutation_rate=0.3, elitism=0.2,
                  selection_method=2, crossover_method=0, mutation_method=0, silent=True):
         """
         Initialize the algorithm.
@@ -42,7 +42,6 @@ class GeneticAlgorithm:
         self.problem = problem
         self.mutation_rate = mutation_rate
         self.surviving = math.ceil(elitism * population_size)
-        self.crossover_rate = crossover_rate
         self.selection_method = self.select_selection(selection_method)
         self.crossover_method = self.select_crossover(crossover_method)
         self.mutation_method = self.select_mutation(mutation_method)
@@ -151,10 +150,6 @@ class GeneticAlgorithm:
         children = []
         for i in range((self.population_size - self.surviving) // 2):
             chr1, chr2 = self.selection_method(2)
-            if random.random() > self.crossover_rate:
-                    children.append(chr1)
-                    children.append(chr2)
-                    continue
             children += self.crossover_method(chr1, chr2)
 
         return children
