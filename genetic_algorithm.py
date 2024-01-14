@@ -386,18 +386,16 @@ class GeneticAlgorithm:
             # Perform the shift back to the left to keep the not altered part on the same place
             chrom.route = chrom.route[len(chrom.route) - p2:] + chrom.route[:len(chrom.route) - p2]
 
-    def thrors_mutation(self, chrom):
+    def thrors_mutation(self, chrom: Chromosome):
         # take randomly three position i >j>l, has not to be successive elements
         # change j with i, l with  j, and i with l
-        new_route = chrom.route.copy()
-        positions = random.sample(chrom.route, 3)
-        positions.sort()
+        positions = sorted([p - 1 for p in random.sample(chrom.route, 3)])
+        values = [chrom.route[p] for p in positions]
+        chrom.route[positions[1]] = values[0]
+        chrom.route[positions[2]] = values[1]
+        chrom.route[positions[0]] = values[2]
 
-        for i in range(len(positions)):
-            place_from = (i + len(positions) - 1) % len(positions)
-            new_route[positions[i]] = chrom.route[positions[place_from]]
-
-        chrom.set_route(new_route)
+        chrom.update_fitness()
 
 
 if __name__ == '__main__':
